@@ -75,12 +75,22 @@ class CustomUser(AbstractUser, BaseModel):
 
     def create_code(self, verify_type):
         self.verify_codes.filter(verify_type=verify_type, is_used=False).update(is_used=True)
-        
+  
         code = str(random.randint(1000, 9999))
+        
+        current_time = timezone.now()
+        if verify_type == VIA_EMAIL:
+            expiry_minutes = int(EMAIL_EXPIRATION_TIME)
+        else:
+            expiry_minutes = int(PHONE_EXPIRATION_TIME)
+            
+        calculated_expiration_time = current_time + timedelta(minutes=expiry_minutes)
+
         CodeVerify.objects.create(
             code=code,
             user=self,
-            verify_type=verify_type
+            verify_type=verify_type,
+            expiration_time=calculated_expiration_time
         )
         return code
 
@@ -99,12 +109,3 @@ class CodeVerify(BaseModel):
 
     def __str__(self):
         return f"{self.user.username} uchun kod: {self.code}"
-
-    def save(self, *args, **kwargs):
-        if not self.pk: 
-            current_time = timezone.now()
-            if self.verify_type == VIA_EMAIL:
-                self.expiration_time = current_time + timedelta(minutes=EMAIL_EXPIRATION_TIME)
-            else:
-                self.expiration_time = current_time + timedelta(minutes=PHONE_EXPIRATION_TIME)
-        super().save(*args, **kwargs)
