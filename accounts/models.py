@@ -11,7 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 ORDINARY_USER, SELLER, ADMIN = ("ordinary_user", "seller", "admin")
 VIA_PHONE, VIA_EMAIL = ("via_phone", "via_email")
-NEW, CODE_VERIFY, CHANGE_INFO, DONE = ("new", "code_verify", "change_info", "done")
+NEW, CODE_VERIFY, CHANGE_INFO, DONE, UPLOAD_AVATAR_DONE,   = ("new", "code_verify", "change_info", "done", "upload_avatar_done")
 
 class CustomUser(AbstractUser, BaseModel):
     USER_ROLE = (
@@ -27,7 +27,9 @@ class CustomUser(AbstractUser, BaseModel):
         (NEW, NEW),
         (CODE_VERIFY, CODE_VERIFY),
         (CHANGE_INFO, CHANGE_INFO),
+        (UPLOAD_AVATAR_DONE, UPLOAD_AVATAR_DONE),
         (DONE, DONE),
+        
     )
 
     user_role = models.CharField(max_length=250, choices=USER_ROLE, default=ORDINARY_USER)
