@@ -122,7 +122,6 @@ class ResendCodeSerializer(serializers.Serializer):
 
 
 class ChangeProfileInfoSerializer(serializers.ModelSerializer):
-    # Old flow (existing endpoints) 
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     confirm_password = serializers.CharField(write_only=True, required=True)
     first_name = serializers.CharField(required=True, max_length=100)
@@ -164,7 +163,6 @@ class UploadProfilePhotoSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         instance.photo = validated_data.get("photo", instance.photo)
-        # photo upload status must NOT change.
         instance.save()
         return instance
 
