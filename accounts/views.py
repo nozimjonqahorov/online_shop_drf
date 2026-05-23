@@ -88,7 +88,6 @@ class ResendCodeView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# ===== Existing profile steps (old endpoints) =====
 class ChangeProfileInfoView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -144,7 +143,6 @@ class UploadProfilePhotoView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# ===== New APIs: Profile + Profile update =====
 class ProfileView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -165,7 +163,6 @@ class ProfileUpdateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# ===== New API: Login =====
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -180,7 +177,6 @@ class LoginView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# ===== New API: Logout (SimpleJWT blacklist) =====
 class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -191,9 +187,8 @@ class LogoutView(APIView):
 
         try:
             token = RefreshToken(refresh_token)
-            # blacklist
             BlacklistedToken.objects.get_or_create(token=token)
             return Response({"success": True, "message": "Logout muvaffaqiyatli"}, status=status.HTTP_200_OK)
         except Exception:
-            return Response({"message": "Invalid refresh token"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Xato refresh token"}, status=status.HTTP_400_BAD_REQUEST)
 
