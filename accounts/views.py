@@ -185,7 +185,6 @@ class LoginView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -196,11 +195,10 @@ class LogoutView(APIView):
 
         try:
             token = RefreshToken(refresh_token)
-
             BlacklistedToken.objects.get_or_create(token=token)
             return Response({"success": True, "message": "Logout muvaffaqiyatli"}, status=status.HTTP_200_OK)
         except Exception:
-            return Response({"message": "Invalid refresh token"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Xato refresh token"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ForgotPasswordView(APIView):
