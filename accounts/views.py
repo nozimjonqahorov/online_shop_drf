@@ -20,7 +20,11 @@ from .serializers import (
     ProfileSerializer,
     ProfileUpdateSerializer,
     LoginSerializer,
+    ForgotPasswordSerializer,
+    ResetPasswordSerializer,
+    ChangePasswordSerializer,
 )
+
 
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
@@ -35,6 +39,7 @@ class SignUpView(CreateAPIView):
 
 
 class VerifyCodeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
     def post(self, request, *args, **kwargs):
         serializer = VerifyCodeSerializer(data=request.data)
 
@@ -62,6 +67,8 @@ class VerifyCodeView(APIView):
 
 
 class ResendCodeView(APIView):
+    
+    permission_classes = [permissions.IsAuthenticated]
     def post(self, request, *args, **kwargs):
         serializer = ResendCodeSerializer(data=request.data)
 
@@ -88,7 +95,7 @@ class ResendCodeView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# ===== Existing profile steps (old endpoints) =====
+
 class ChangeProfileInfoView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -144,7 +151,6 @@ class UploadProfilePhotoView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# ===== New APIs: Profile + Profile update =====
 class ProfileView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -165,7 +171,6 @@ class ProfileUpdateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# ===== New API: Login =====
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -180,7 +185,7 @@ class LoginView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# ===== New API: Logout (SimpleJWT blacklist) =====
+
 class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -191,9 +196,91 @@ class LogoutView(APIView):
 
         try:
             token = RefreshToken(refresh_token)
-            # blacklist
+
             BlacklistedToken.objects.get_or_create(token=token)
             return Response({"success": True, "message": "Logout muvaffaqiyatli"}, status=status.HTTP_200_OK)
         except Exception:
             return Response({"message": "Invalid refresh token"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ForgotPasswordView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = ForgotPasswordSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user = serializer.validated_data["user"]
+        verify_type = serializer.validated_data["verify_type"]
+
+        code = user.create_code(verify_type)
+
+        if verify_type == VIA_EMAIL:
+            send_to_mail(
+                message=f"Sizning parolni tiklash (reset) kodingiz: {code}",
+                email=user.email,
+            )
+        else:
+            print(f"Yangi kod ): {code}")
+
+        return Response(
+            {
+                "success": True,
+                "message": "Reset uchun kod yuborildi.",
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class ResetPasswordView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = ResetPasswordSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user = serializer.validated_data["user"]
+        verify_code = serializer.validated_data["verify_code"]
+        new_password = serializer.validated_data["new_password"]
+
+        verify_code.is_used = True
+        verify_code.save()
+
+        user.set_password(new_password)
+        user.save()
+
+        return Response(
+            {
+                "success": True,
+                "message": "Parol muvaffaqiyatli yangilandi.",
+                "tokens": user.token(),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = ChangePasswordSerializer(data=request.data, context={"request": request})
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user = serializer.validated_data["user"]
+        new_password = serializer.validated_data["new_password"]
+
+        user.set_password(new_password)
+        user.save()
+
+        return Response(
+            {
+                "success": True,
+                "message": "Parol muvaffaqiyatli o'zgartirildi.",
+            },
+            status=status.HTTP_200_OK,
+        )
+
 

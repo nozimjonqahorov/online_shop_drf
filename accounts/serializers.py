@@ -122,7 +122,7 @@ class ResendCodeSerializer(serializers.Serializer):
 
 
 class ChangeProfileInfoSerializer(serializers.ModelSerializer):
-    # Old flow (existing endpoints) 
+
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     confirm_password = serializers.CharField(write_only=True, required=True)
     first_name = serializers.CharField(required=True, max_length=100)
@@ -155,7 +155,6 @@ class ChangeProfileInfoSerializer(serializers.ModelSerializer):
 
 
 class UploadProfilePhotoSerializer(serializers.ModelSerializer):
-    # Old flow (existing endpoints)
     photo = serializers.ImageField(required=True)
 
     class Meta:
@@ -229,4 +228,94 @@ class LoginSerializer(serializers.Serializer):
 
         attrs["user"] = user
         return attrs
+
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email_or_phone = serializers.CharField(required=True, write_only=True)
+
+    def validate(self, attrs):
+        user_input = attrs.get("email_or_phone", "")
+        field_type, cleaned_value = check_email_or_phone(user_input)
+
+        if field_type == "email":
+            user = CustomUser.objects.filter(email=cleaned_value).first()
+            verify_type = VIA_EMAIL
+        else:
+            user = CustomUser.objects.filter(phone_number=cleaned_value).first()
+            verify_type = VIA_PHONE
+
+        if not user:
+            raise ValidationError({"message": "Foydalanuvchi topilmadi!"})
+
+        attrs["user"] = user
+        attrs["verify_type"] = verify_type
+        return attrs
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    email_or_phone = serializers.CharField(required=True, write_only=True)
+    code = serializers.CharField(max_length=4, required=True, write_only=True)
+    new_password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    confirm_password = serializers.CharField(write_only=True, required=True)
+
+    def validate(self, attrs):
+        if attrs["new_password"] != attrs["confirm_password"]:
+            raise ValidationError({"confirm_password": "Parollar bir-biriga mos kelmadi!"})
+
+        user_input = attrs.get("email_or_phone", "")
+        code = attrs.get("code", "").strip()
+
+        field_type, cleaned_value = check_email_or_phone(user_input)
+
+        if field_type == "email":
+            user = CustomUser.objects.filter(email=cleaned_value).first()
+            verify_type = VIA_EMAIL
+        else:
+            user = CustomUser.objects.filter(phone_number=cleaned_value).first()
+            verify_type = VIA_PHONE
+
+        if not user:
+            raise ValidationError({"message": "Foydalanuvchi topilmadi!"})
+
+        verify_code = CodeVerify.objects.filter(
+            user=user,
+            verify_type=verify_type,
+            code=code,
+            is_used=False,
+        ).order_by("-created_at").first()
+
+        if not verify_code:
+            raise ValidationError({"code": "Tasdiqlash kodi xato!"})
+
+        from django.utils import timezone
+
+        if verify_code.expiration_time and verify_code.expiration_time < timezone.now():
+            raise ValidationError({"code": "Kodning amal qilish vaqti tugagan!"})
+
+        attrs["user"] = user
+        attrs["verify_code"] = verify_code
+        return attrs
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True, write_only=True)
+    new_password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    confirm_password = serializers.CharField(write_only=True, required=True)
+
+    def validate(self, attrs):
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+
+        if not user:
+            raise ValidationError({"message": "Authentication required"})
+
+        if attrs["new_password"] != attrs["confirm_password"]:
+            raise ValidationError({"confirm_password": "Parollar bir-biriga mos kelmadi!"})
+
+        if not user.check_password(attrs["old_password"]):
+            raise ValidationError({"old_password": "Eski parol noto'g'ri"})
+
+        attrs["user"] = user
+        return attrs
+
 
