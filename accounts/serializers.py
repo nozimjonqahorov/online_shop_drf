@@ -69,11 +69,13 @@ class VerifyCodeSerializer(serializers.Serializer):
     def validate(self, attrs):
         user_input = attrs.get("email_or_phone", "")
         code = attrs.get("code", "").strip()
-
+        print(user_input)
+        print(code)
         field_type, cleaned_value = check_email_or_phone(user_input)
 
         if field_type == "email":
             user = CustomUser.objects.filter(email=cleaned_value).first()
+            print(user)
         else:
             user = CustomUser.objects.filter(phone_number=cleaned_value).first()
 
@@ -81,6 +83,7 @@ class VerifyCodeSerializer(serializers.Serializer):
             raise ValidationError({"message": "Foydalanuvchi topilmadi!"})
 
         verify_code = CodeVerify.objects.filter(user=user, code=code, is_used=False).order_by("-created_at").first()
+        print(verify_code)
 
         if not verify_code:
             raise ValidationError({"code": "Tasdiqlash kodi xato!"})
@@ -110,7 +113,7 @@ class ResendCodeSerializer(serializers.Serializer):
 
         active_code = CodeVerify.objects.filter(
             user=user,
-            is_used=True,
+            is_used=False,
             expiration_time__gte=timezone.now(),
         ).order_by("-created_at").first()
 
@@ -124,6 +127,7 @@ class ResendCodeSerializer(serializers.Serializer):
 class ChangeProfileInfoSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     confirm_password = serializers.CharField(write_only=True, required=True)
+    username = serializers.CharField(required=True, max_length=100)
     first_name = serializers.CharField(required=True, max_length=100)
     last_name = serializers.CharField(required=True, max_length=100)
     user_role = serializers.CharField(required=True, max_length=100)
@@ -140,7 +144,8 @@ class ChangeProfileInfoSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         validated_data.pop("confirm_password", None)
         password = validated_data.pop("password", None)
-
+        
+        instance.username =  validated_data.get("username", instance.username)
         instance.first_name = validated_data.get("first_name", instance.first_name)
         instance.last_name = validated_data.get("last_name", instance.last_name)
         instance.user_role = validated_data.get("user_role", instance.user_role)
@@ -162,6 +167,7 @@ class UploadProfilePhotoSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         instance.photo = validated_data.get("photo", instance.photo)
+        instance.auth_status = UPLOAD_AVATAR_DONE
         instance.save()
         return instance
 

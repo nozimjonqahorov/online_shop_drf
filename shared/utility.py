@@ -21,3 +21,21 @@ def check_email_or_phone(email_or_phone):
         return 'phone', cleaned_input
 
     raise ValidationError({"email_or_phone": "Email yoki telefon raqami noto'g'ri kiritildi!"})
+
+
+
+
+import uuid
+from django.utils.text import slugify
+
+def generate_unique_slug(instance, text):
+    origin_slug = slugify(text)
+    unique_slug = origin_slug
+
+    Klass = instance.__class__
+
+    while Klass.objects.filter(slug=unique_slug).exists():
+    
+        unique_slug = f"{origin_slug}-{uuid.uuid4().hex[:8]}"
+        
+    return unique_slug

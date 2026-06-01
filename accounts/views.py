@@ -2,13 +2,16 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from .models import (
     VIA_EMAIL,
     VIA_PHONE,
+    NEW, 
     CODE_VERIFY,
     CHANGE_INFO,
+    UPLOAD_AVATAR_DONE,
+    DONE
 )
 from .models import CustomUser
 from .serializers import (
@@ -39,7 +42,7 @@ class SignUpView(CreateAPIView):
 
 
 class VerifyCodeView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     def post(self, request, *args, **kwargs):
         serializer = VerifyCodeSerializer(data=request.data)
 
@@ -68,7 +71,7 @@ class VerifyCodeView(APIView):
 
 class ResendCodeView(APIView):
     
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     def post(self, request, *args, **kwargs):
         serializer = ResendCodeSerializer(data=request.data)
 
@@ -102,7 +105,13 @@ class ChangeProfileInfoView(APIView):
     def put(self, request, *args, **kwargs):
         user = request.user
 
-        if user.auth_status != CODE_VERIFY:
+        if user.auth_status in [CHANGE_INFO, UPLOAD_AVATAR_DONE, DONE]:
+            return Response(
+                {"message": "Siz bu qismdan o'tib bo'lgansiz"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if user.auth_status == NEW:
             return Response(
                 {"message": "Siz avval kodni tasdiqlashingiz kerak!"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -161,7 +170,7 @@ class ProfileView(APIView):
 
 class ProfileUpdateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def put(self, request, *args, **kwargs):
         serializer = ProfileUpdateSerializer(instance=request.user, data=request.data, partial=True)
@@ -191,11 +200,11 @@ class LogoutView(APIView):
     def post(self, request, *args, **kwargs):
         refresh_token = request.data.get("refresh")
         if not refresh_token:
-            return Response({"message": "refresh token required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "refresh token taqdim etilishi shart"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             token = RefreshToken(refresh_token)
-            BlacklistedToken.objects.get_or_create(token=token)
+            token.blacklist()
             return Response({"success": True, "message": "Logout muvaffaqiyatli"}, status=status.HTTP_200_OK)
         except Exception:
             return Response({"message": "Xato refresh token"}, status=status.HTTP_400_BAD_REQUEST)

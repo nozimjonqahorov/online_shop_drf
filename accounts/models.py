@@ -76,7 +76,7 @@ class CustomUser(AbstractUser, BaseModel):
         }
 
     def create_code(self, verify_type):
-        self.verify_codes.filter(verify_type=verify_type, is_used=False).update(is_used=True)
+        self.verify_codes.filter(verify_type=verify_type, is_used=False)
   
         code = str(random.randint(1000, 9999))
         

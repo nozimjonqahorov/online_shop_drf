@@ -12,3 +12,5 @@ def send_to_mail(email, message):
         recipient_list=[email],
         fail_silently=False,
     )
+
+
