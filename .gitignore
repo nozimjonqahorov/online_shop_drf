@@ -1,6 +1,34 @@
 .venv/
+venv/
+env/
 __pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Local environment / secrets
+.env
+.env.*
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Project cache / temporary files
 .qodo/
 .sixth/
 skills/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.log
+
+# Database and uploads
+*.sqlite3
 db.sqlite3
+media/
+
