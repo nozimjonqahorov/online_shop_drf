@@ -27,7 +27,7 @@ This repository contains a Django REST API for a small online marketplace. The p
 - djangorestframework-simplejwt 5.5.1
 - drf-yasg 1.21.15
 - Pillow 12.2.0
-- Faker 40.21.0
+
 
 ## Quick start
 
@@ -56,17 +56,7 @@ This repository contains a Django REST API for a small online marketplace. The p
    - Swagger: http://127.0.0.1:8000/swagger/
    - ReDoc: http://127.0.0.1:8000/redoc/
 
-## Useful development commands
 
-Generate sample data:
-```powershell
-python manage.py generate_fake_data --users 10 --sellers 3 --categories 5 --products 20 --orders 10
-```
-
-Run checks:
-```powershell
-python manage.py check
-```
 
 ## API overview
 
@@ -77,7 +67,7 @@ python manage.py check
 ## Notes
 
 - The project uses SQLite by default in this repository.
-- The old requirements file contained many environment-specific packages; it has been cleaned to match the actual project dependencies used here.
+
 
 ## License
 
