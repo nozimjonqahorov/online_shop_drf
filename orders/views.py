@@ -156,8 +156,3 @@ class SellerOrderDetailView(RetrieveUpdateAPIView):
     
 
 
-
-# {
-#     "email_or_phone":"wblackburn@example.net",
-#   "password":"TestPassword123!"
-# }
