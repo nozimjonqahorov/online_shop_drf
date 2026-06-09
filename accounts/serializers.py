@@ -185,7 +185,8 @@ class ProfileSerializer(serializers.ModelSerializer):
             "email",
             "phone_number",
             "photo",
-            "user_role"
+            "user_role",
+            "auth_status"
         ]
 
 
@@ -222,12 +223,15 @@ class LoginSerializer(serializers.Serializer):
         password = attrs.get("password", "")
         field_type, cleaned_value = check_email_or_phone(user_input)
 
+
         if field_type == "email":
             user = CustomUser.objects.filter(email=cleaned_value).first()
         else:
             user = CustomUser.objects.filter(phone_number=cleaned_value).first()
 
-        if not user or not user.check_password(password):
+        if not user:
+            raise ValidationError({"message": "User topilmadi"})
+        if not user.check_password(password):
             raise ValidationError({"message": "Email/telefon yoki parol noto'g'ri"})
 
         attrs["user"] = user

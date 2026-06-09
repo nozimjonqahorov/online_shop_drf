@@ -1,14 +1,17 @@
 from django.shortcuts import render, get_object_or_404 
 from .models import Product, Category, CartItem, Cart
+from orders.models import Review
 from rest_framework.exceptions import ValidationError
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .serializers import CategorySerializer, ProductSerializer, CartItemSerializer, CartSerializer
-from .permissions import IsAdmin, IsSellerOrAdmin, IsOwnerOrAdminOrReadOnly, IsSeller
+from .permissions import IsAdmin, IsSellerOrAdmin, IsOwnerOrAdminOrReadOnly, IsSeller, IsOrdinaryUser
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.generics import RetrieveAPIView, CreateAPIView, RetrieveUpdateDestroyAPIView
+from .serializers import ReviewSerializer
+
 
 
 class CategoryListAPIView(APIView):
@@ -113,7 +116,7 @@ class ProductDetailAPIView(APIView):
 
 class CartDetailView(RetrieveAPIView):
     serializer_class = CartSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOrdinaryUser]
 
     def get_object(self):
         cart, created = Cart.objects.get_or_create(user=self.request.user)
@@ -122,38 +125,7 @@ class CartDetailView(RetrieveAPIView):
 
 class CartItemCreateView(CreateAPIView):
     serializer_class = CartItemSerializer
-    permission_classes = [IsAuthenticated]
-
-    def create(self, request, *args, **kwargs):
-        cart, created = Cart.objects.get_or_create(user=request.user)
-        product_id = request.data.get('product')
-        try:
-            quantity = int(request.data.get('quantity', 1))
-        except (TypeError, ValueError):
-            return Response(
-                {"quantity": "Iltimos, miqdorni to'g'ri raqam sifatida kiriting."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if quantity < 1:
-            return Response(
-                {"quantity": "Miqdor kamida 1 bo'lishi shart."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        product = get_object_or_404(Product, id=product_id)
-
-      
-        cart_item, item_created = CartItem.objects.get_or_create(cart=cart, product=product)
-        if not item_created:
-            cart_item.quantity += quantity
-        else:
-            cart_item.quantity = quantity
-        
-        cart_item.save()
-        
-        serializer = self.get_serializer(cart_item)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    permission_classes = [IsAuthenticated, IsOrdinaryUser]
 
 
 class CartItemDetailView(RetrieveUpdateDestroyAPIView):
@@ -164,4 +136,7 @@ class CartItemDetailView(RetrieveUpdateDestroyAPIView):
         return CartItem.objects.filter(cart__user=self.request.user)
 
 
-
+class ReviewCreateAPIView(CreateAPIView):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    permission_classes = [IsAuthenticated, IsOrdinaryUser] 

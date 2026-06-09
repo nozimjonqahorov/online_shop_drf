@@ -105,7 +105,7 @@ class ChangeProfileInfoView(APIView):
     def put(self, request, *args, **kwargs):
         user = request.user
 
-        if user.auth_status in [CHANGE_INFO, UPLOAD_AVATAR_DONE, DONE]:
+        if user.auth_status in [UPLOAD_AVATAR_DONE, DONE]:
             return Response(
                 {"message": "Siz bu qismdan o'tib bo'lgansiz"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -120,6 +120,7 @@ class ChangeProfileInfoView(APIView):
         serializer = ChangeProfileInfoSerializer(instance=user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
+            user.auth_status = CHANGE_INFO
             return Response(
                 {
                     "success": True,

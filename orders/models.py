@@ -21,6 +21,11 @@ class Order(BaseModel):
         (CANCELLED,  "Bekor qilindi"),
     )
 
+    PAYMENT_METHODS = (
+        ("cash", "Naqd pul"),
+        ("card", "Plastik karta"),
+    )
+    
     user = models.ForeignKey(
         CustomUser, on_delete=models.SET_NULL,
         null=True, related_name="orders"
@@ -34,6 +39,10 @@ class Order(BaseModel):
     address = models.CharField(max_length=500)
     phone = models.CharField(max_length=13)
     note = models.TextField(blank=True)
+    payment_method = models.CharField(
+        max_length=20, choices=PAYMENT_METHODS, default="cash"
+    )
+    is_paid = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Buyurtma #{self.pk} — {self.status}"

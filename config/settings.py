@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     'rest_framework', 
+    'drf_yasg',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
 
@@ -47,7 +48,7 @@ REST_FRAMEWORK = {
     ),
 
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     )
 }
 
@@ -159,3 +160,12 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'nozimjonkahhorov@gmail.com' 
 EMAIL_HOST_PASSWORD = 'ennt argu nzke pxoc' 
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
+
+
+
+
+
+
+
